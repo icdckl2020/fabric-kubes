@@ -1,0 +1,271 @@
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
+Organizations:
+
+   - &org0
+      Name: org0
+      ID: Org0MSP
+      MSPDir: /var/artifacts/crypto-config/Org0MSP/msp
+
+      Policies:
+         Readers:
+            Type: Signature
+            Rule: "OR('Org0MSP.member')"
+         Writers:
+            Type: Signature
+            Rule: "OR('Org0MSP.member')"
+         Admins:
+            Type: Signature
+            Rule: "OR('Org0MSP.admin')"
+
+   - &org1
+      Name: org1
+      ID: Org1MSP
+      MSPDir: /var/artifacts/crypto-config/Org1MSP/msp
+
+      Policies:
+         Readers:
+            Type: Signature
+            Rule: "OR('Org1MSP.member')"
+         Writers:
+            Type: Signature
+            Rule: "OR('Org1MSP.member')"
+         Admins:
+            Type: Signature
+            Rule: "OR('Org1MSP.admin')"
+         Endorsement:
+            Type: Signature
+            Rule: "OR('Org1MSP.member')"            
+
+      OrdererEndpoints:
+         - orderer0-org0:7050
+         - orderer1-org0:7150
+         - orderer2-org0:7250
+         - orderer3-org0:7350
+         - orderer4-org0:7450
+
+      AnchorPeers:
+         - Host: peer0-org1
+           Port: 7051
+
+   - &org2
+      Name: org2
+      ID: Org2MSP
+      MSPDir: /var/artifacts/crypto-config/Org2MSP/msp
+
+      Policies:
+         Readers:
+            Type: Signature
+            Rule: "OR('Org2MSP.member')"
+         Writers:
+            Type: Signature
+            Rule: "OR('Org2MSP.member')"
+         Admins:
+            Type: Signature
+            Rule: "OR('Org2MSP.admin')"
+         Endorsement:
+            Type: Signature
+            Rule: "OR('Org2MSP.member')"            
+
+      OrdererEndpoints:
+         - orderer0-org0:7050
+         - orderer1-org0:7150
+         - orderer2-org0:7250
+         - orderer3-org0:7350
+         - orderer4-org0:7450
+
+      AnchorPeers:
+         - Host: peer0-org2
+           Port: 7251
+
+   - &org3
+      Name: org3
+      ID: Org3MSP
+      MSPDir: /var/artifacts/crypto-config/Org3MSP/msp
+
+      Policies:
+         Readers:
+            Type: Signature
+            Rule: "OR('Org3MSP.member')"
+         Writers:
+            Type: Signature
+            Rule: "OR('Org3MSP.member')"
+         Admins:
+            Type: Signature
+            Rule: "OR('Org3MSP.admin')"
+         Endorsement:
+            Type: Signature
+            Rule: "OR('Org3MSP.member')"            
+
+      OrdererEndpoints:
+         - orderer0-org0:7050
+         - orderer1-org0:7150
+         - orderer2-org0:7250
+         - orderer3-org0:7350
+         - orderer4-org0:7450
+
+      AnchorPeers:
+         - Host: peer0-org3
+           Port: 7451
+
+Capabilities:
+   Channel: &ChannelCapabilities
+      V2_0: true
+      V1_4_3: false
+   Orderer: &OrdererCapabilities
+      V2_0: true
+      V1_4_2: false
+   Application: &ApplicationCapabilities
+      V2_0: true
+      V1_4_2: false
+
+################################################################################
+#
+#   SECTION: Application
+#
+#   This section defines the values to encode into a config transaction or
+#   genesis block for application related parameters
+#
+################################################################################
+Application: &ApplicationDefaults
+
+   # Organizations is the list of orgs which are defined as participants on
+   # the application side of the network
+   Organizations:
+   Policies:
+      Readers:
+         Type: ImplicitMeta
+         Rule: "ANY Readers"
+      Writers:
+         Type: ImplicitMeta
+         Rule: "ANY Writers"
+      Admins:
+         Type: ImplicitMeta
+         Rule: "MAJORITY Admins"
+      LifecycleEndorsement:
+         Type: ImplicitMeta
+         Rule: "MAJORITY Endorsement"
+      Endorsement:
+         Type: ImplicitMeta
+         Rule: "MAJORITY Endorsement"
+
+   Capabilities:
+      <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+
+   OrdererType: etcdraft
+   Addresses:
+      - orderer0-org0:7050
+      - orderer1-org0:7150
+      - orderer2-org0:7250
+      - orderer3-org0:7350
+      - orderer4-org0:7450
+   BatchTimeout: 2s
+   BatchSize:
+      MaxMessageCount: 500
+      AbsoluteMaxBytes: 99 MB
+      PreferredMaxBytes: 2 MB
+   MaxChannels: 10
+   EtcdRaft:
+      Consenters:
+         - Host: orderer0-org0
+           Port: 7050
+           ClientTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer0.org0.com/tls-msp/signcerts/cert.pem
+           ServerTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer0.org0.com/tls-msp/signcerts/cert.pem
+         - Host: orderer1-org0
+           Port: 7150
+           ClientTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer1.org0.com/tls-msp/signcerts/cert.pem
+           ServerTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer1.org0.com/tls-msp/signcerts/cert.pem
+         - Host: orderer2-org0
+           Port: 7250
+           ClientTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer2.org0.com/tls-msp/signcerts/cert.pem
+           ServerTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer2.org0.com/tls-msp/signcerts/cert.pem
+         - Host: orderer3-org0
+           Port: 7350
+           ClientTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer3.org0.com/tls-msp/signcerts/cert.pem
+           ServerTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer3.org0.com/tls-msp/signcerts/cert.pem
+         - Host: orderer4-org0
+           Port: 7450
+           ClientTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer4.org0.com/tls-msp/signcerts/cert.pem
+           ServerTLSCert: /var/artifacts/crypto-config/Org0MSP/orderer4.org0.com/tls-msp/signcerts/cert.pem
+
+      Options:
+         TickInterval: 500ms
+         ElectionTick: 10
+         HeartbeatTick: 1
+         MaxInflightBlocks: 5
+         SnapshotIntervalSize: 20 MB
+
+   Organizations:
+   Policies:
+      Readers:
+         Type: ImplicitMeta
+         Rule: "ANY Readers"
+      Writers:
+         Type: ImplicitMeta
+         Rule: "ANY Writers"
+      Admins:
+         Type: ImplicitMeta
+         Rule: "MAJORITY Admins"
+      BlockValidation:
+         Type: ImplicitMeta
+         Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+   Policies:
+      Readers:
+         Type: ImplicitMeta
+         Rule: "ANY Readers"
+      Writers:
+         Type: ImplicitMeta
+         Rule: "ANY Writers"
+      Admins:
+         Type: ImplicitMeta
+         Rule: "MAJORITY Admins"
+
+   Capabilities:
+      <<: *ChannelCapabilities
+
+################################################################################
+#
+#   Profile
+#
+#   Different configuration profiles may be encoded here to be specified as
+#   parameters to the configtxgen tool.
+#
+################################################################################
+Profiles:
+
+   OrgsOrdererGenesis:
+      <<: *ChannelDefaults
+      Orderer:
+         <<: *OrdererDefaults
+         Organizations:
+            - *org0
+         Capabilities:
+            <<: *OrdererCapabilities
+      Consortiums:
+         Big4HK:
+            Organizations:
+               - *org1
+               - *org2
+               - *org3
+
+   OrgsChannel:
+      Consortium: Big4HK
+      <<: *ChannelDefaults
+      Application:
+         <<: *ApplicationDefaults
+         Organizations:
+            - *org1
+            - *org2
+            - *org3
+         Capabilities:
+            <<: *ApplicationCapabilities

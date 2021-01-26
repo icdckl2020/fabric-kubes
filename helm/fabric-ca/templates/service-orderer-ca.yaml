@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.orgs.orderer.ca.host }}-{{ .Values.orgs.orderer.name }}
+  labels:
+    {{- include "labels" . | nindent 4 }}
+    svc: {{ .Values.orgs.orderer.ca.host }}-{{ .Values.orgs.orderer.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.orgs.orderer.ca.host }}-{{ .Values.orgs.orderer.name }}
+    instance: {{$.Release.Name}}
+  ports:
+    - name: request
+      protocol: TCP
+      port: {{ .Values.orgs.orderer.ca.port }}
+      targetPort: {{ .Values.orgs.orderer.ca.port }}

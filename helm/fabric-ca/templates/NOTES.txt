@@ -1,0 +1,5 @@
+TLS CA Address:         {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}:{{ .Values.orgs.tls.ca.port }}
+Orderer CA Address:     {{ .Values.orgs.orderer.ca.host }}-{{ .Values.orgs.orderer.name }}:{{ .Values.orgs.orderer.ca.port }}
+{{- range $idx, $peer := .Values.orgs.peer }}
+{{ .name }} CA Address:        {{ .ca.host }}-{{ .name }}:{{ .ca.port }}
+{{- end }}

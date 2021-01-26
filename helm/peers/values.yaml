@@ -1,0 +1,245 @@
+---
+debug: true
+
+image:
+  pullPolicy: IfNotPresent
+
+network:
+  name: openplatform
+  timezone: Asia/Hong_Kong
+  composeProjectName: dev-net
+  consortium: Big4HK
+  fabricImage: 2.3.0
+  fabricCaImage: 1.4.9
+  ordererChannel: ordererchannel
+  peerChannels:
+  - loanapp
+
+artifacts:
+  local: "../../artifacts"
+  docker: "/var/artifacts"
+  crypto: crypto-config
+  production: production
+  ordererHome: orderer
+  peersWorkingDir: "/opt/gopath/src/github.com/hyperledger/fabric"
+
+lifecycle: MAJORITY Endorsement
+
+chaincodes:
+- ccname: eventstore
+  ccpath: op
+  ccver: '1.0'
+  policy: AND ('Org1MSP.member' ,'Org2MSP.member' ,'Org3MSP.member')
+  instantiate: '{"Args":["Init"]}'
+
+orgs:
+
+  tls:
+    name: org0
+    domain: org0
+    ca:
+      host: tls-ca
+      port: '5052'
+      admin: tls-ca-admin
+      adminpw: tls-ca-adminPW
+      adminCertPath: Org0MSP/tls/admin
+      serverHome: Org0MSP/tls/server
+
+  orderer:
+    name: org0
+    id: Org0MSP
+    domain: org0
+    mspPath: Org0MSP/msp
+    adminCertPath: Org0MSP/admin
+    adminCertUser: admin-org0
+    adminCertPw: admin-org0PW
+    caServerCertPath: Org0MSP/ca/crypto
+    orderers:
+      endpoints:
+      - ep: orderer0
+        extPort: '7050'
+        certPath: Org0MSP/orderer0.org0.com
+        tls:
+          user: orderer0.org0.com
+          pw: PCzEE5x2
+        cert:
+          user: orderer0.org0.com
+          pw: DPCxKv8m
+      - ep: orderer1
+        extPort: '7150'
+        certPath: Org0MSP/orderer1.org0.com
+        tls:
+          user: orderer1.org0.com
+          pw: E9Rd54w2
+        cert:
+          user: orderer1.org0.com
+          pw: PCzEE5x2
+      - ep: orderer2
+        extPort: '7250'
+        certPath: Org0MSP/orderer2.org0.com
+        tls:
+          user: orderer2.org0.com
+          pw: x4Y95QFC
+        cert:
+          user: orderer2.org0.com
+          pw: T2ZNRe8x
+      - ep: orderer3
+        extPort: '7350'
+        certPath: Org0MSP/orderer3.org0.com
+        tls:
+          user: orderer3.org0.com
+          pw: gf4ZKPSU
+        cert:
+          user: orderer3.org0.com
+          pw: 7B5qMkhg
+      - ep: orderer4
+        extPort: '7450'
+        certPath: Org0MSP/orderer4.org0.com
+        tls:
+          user: orderer4.org0.com
+          pw: NhZM2pLZ
+        cert:
+          user: orderer4.org0.com
+          pw: p8Maufjr
+        islast: true
+    ca:
+      host: rca
+      port: '5053'
+      admin: rca-org0-admin
+      adminpw: rca-org0-adminPW
+      adminCertPath: Org0MSP/ca/admin
+      serverHome: Org0MSP/ca/server
+
+  peer:
+
+  - name: org1
+    id: Org1MSP
+    domain: org1
+    mspPath: Org1MSP/msp
+    adminCertPath: Org1MSP/admin
+    adminCertUser: admin-org1.net
+    adminCertPw: admin-org1.netPW
+    caServerCertPath: Org1MSP/ca/crypto
+    peers:
+      anchor: peer0
+      anchorPort: '7051'
+      endpoints:
+      - ep: peer0
+        port: '7051'
+        chaincodePort: '7052'
+        eventhubPort: '7053'
+        operationsPort: '10443'
+        certPath: Org1MSP/peer0.org1.net
+        tls:
+          user: peer0.org1.net
+          pw: 9d8vdCdk
+        cert:
+          user: peer0.org1.net
+          pw: Tt4g3KLH
+      - ep: peer1
+        port: '7151'
+        chaincodePort: '7152'
+        eventhubPort: '7153'
+        operationsPort: ''
+        certPath: Org1MSP/peer1.org1.net
+        tls:
+          user: peer1.org1.net
+          pw: Trxg68PA
+        cert:
+          user: peer1.org1.net
+          pw: C2npBNcf
+    ca:
+      host: rca
+      port: '5054'
+      admin: rca-org1-admin
+      adminpw: rca-org1-adminPW
+      adminCertPath: Org1MSP/ca/admin
+      serverHome: Org1MSP/ca/server
+
+  - name: org2
+    id: Org2MSP
+    domain: org2
+    mspPath: Org2MSP/msp
+    adminCertPath: Org2MSP/admin
+    adminCertUser: admin-org2.net
+    adminCertPw: admin-org2.netPW
+    caServerCertPath: Org2MSP/ca/crypto
+    peers:
+      anchor: peer0
+      anchorPort: '7251'
+      endpoints:
+      - ep: peer0
+        port: '7251'
+        chaincodePort: '7252'
+        eventhubPort: '7253'
+        operationsPort: ''
+        certPath: Org2MSP/peer0.org2.net
+        tls:
+          user: peer0.org2.net
+          pw: zkZDG96L
+        cert:
+          user: peer0.org2.net
+          pw: 4PBPEkwt
+      - ep: peer1
+        port: '7351'
+        chaincodePort: '7352'
+        eventhubPort: '7353'
+        operationsPort: ''
+        certPath: Org2MSP/peer1.org2.net
+        tls:
+          user: peer1.org2.net
+          pw: 4KnyJmwB
+        cert:
+          user: peer1.org2.net
+          pw: Q528SdnZ
+    ca:
+      host: rca
+      port: '5055'
+      admin: rca-org2-admin
+      adminpw: rca-org2-adminPW
+      adminCertPath: Org2MSP/ca/admin
+      serverHome: Org2MSP/ca/server
+
+  - name: org3
+    id: Org3MSP
+    domain: org3
+    mspPath: Org3MSP/msp
+    adminCertPath: Org3MSP/admin
+    adminCertUser: admin-org3.net
+    adminCertPw: admin-org3.netPW
+    caServerCertPath: Org3MSP/ca/crypto
+    peers:
+      anchor: peer0
+      anchorPort: '7451'
+      endpoints:
+      - ep: peer0
+        port: '7451'
+        chaincodePort: '7452'
+        eventhubPort: '7453'
+        operationsPort: ''
+        certPath: Org3MSP/peer0.org3.net
+        tls:
+          user: peer0.org3.net
+          pw: zkZDG96L
+        cert:
+          user: peer0.org3.net
+          pw: 4PBPEkwt
+      - ep: peer1
+        port: '7551'
+        chaincodePort: '7552'
+        eventhubPort: '7553'
+        operationsPort: ''
+        certPath: Org3MSP/peer1.org3.net
+        tls:
+          user: peer1.org3.net
+          pw: 4KnyJmwB
+        cert:
+          user: peer1.org3.net
+          pw: Q528SdnZ
+    ca:
+      host: rca
+      port: '5056'
+      admin: rca-org3-admin
+      adminpw: rca-org3-adminPW
+      adminCertPath: Org3MSP/ca/admin
+      serverHome: Org3MSP/ca/server

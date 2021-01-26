@@ -1,0 +1,24 @@
+---
+debug: true
+
+image:
+  pullPolicy: IfNotPresent
+
+network:
+  name: openplatform
+  timezone: Asia/Hong_Kong
+  composeProjectName: dev-net
+  consortium: Big4HK
+  fabricImage: 2.3.0
+  fabricCaImage: 1.4.9
+  ordererChannel: ordererchannel
+  peerChannels:
+  - loanapp
+
+artifacts:
+  local: "../../artifacts"
+  docker: "/var/artifacts"
+  crypto: crypto-config
+  production: production
+  ordererHome: orderer
+  peersWorkingDir: "/opt/gopath/src/github.com/hyperledger/fabric"

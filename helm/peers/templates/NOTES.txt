@@ -1,0 +1,6 @@
+Peer Nodes:
+{{- range $ipeer, $vpeer := .Values.orgs.peer }}
+{{- range $iepoint, $vepoint := .peers.endpoints }}
+{{ $vepoint.ep }}-{{ $vpeer.name }}:{{ $vepoint.port }}
+{{- end }}
+{{- end }}

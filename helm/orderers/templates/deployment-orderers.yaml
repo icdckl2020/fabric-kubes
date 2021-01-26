@@ -1,0 +1,87 @@
+{{ $vorderer := .Values.orgs.orderer -}}
+{{- range $iepoint, $vepoint := $vorderer.orderers.endpoints }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $vepoint.ep }}-{{ $vorderer.name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    app: {{ $vepoint.ep }}-{{ $vorderer.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      chart: {{$.Chart.Name}}
+      instance: {{$.Release.Name}}
+      app: {{ $vepoint.ep }}-{{ $vorderer.name }}
+  template:
+    metadata:
+      labels:
+        chart: {{$.Chart.Name}}
+        instance: {{$.Release.Name}}
+        app: {{ $vepoint.ep }}-{{ $vorderer.name }}
+    spec:
+      volumes:
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: {{ $vepoint.ep }}-{{ $vorderer.name }}
+          image: "hyperledger/fabric-orderer:{{ $.Values.network.fabricImage }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          env:
+            - name: TZ
+              value: "{{ $.Values.network.timezone }}"
+            - name: ORDERER_GENERAL_LISTENADDRESS
+              value: "0.0.0.0"
+            - name: ORDERER_GENERAL_GENESISMETHOD
+              value: "file"
+            - name: ORDERER_GENERAL_TLS_ENABLED
+              value: "true"
+            - name: ORDERER_GENERAL_LOGLEVEL
+              value: "INFO"
+            - name: ORDERER_DEBUG_BROADCASTTRACEDIR
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.ordererHome}}/data/logs"
+            - name: ORDERER_HOST
+              value: "{{ $vepoint.ep }}-{{ $vorderer.name }}"
+            - name: ORDERER_HOME
+              value: "{{$.Values.artifacts.docker}}/{{ $.Values.artifacts.ordererHome }}"
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: "{{ $vorderer.id }}"
+            - name: ORDERER_GENERAL_LOCALMSPDIR
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/msp"
+            - name: ORDERER_GENERAL_TLS_CERTIFICATE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/signcerts/cert.pem"
+            - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/keystore/key.pem"
+            - name: ORDERER_GENERAL_TLS_ROOTCAS
+              value: "[{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/tlscacerts/tls-0-0-0-0-{{$.Values.orgs.tls.ca.port}}.pem]"
+            - name: ORDERER_GENERAL_GENESISFILE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/genesis.block"
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/signcerts/cert.pem"
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/keystore/key.pem"
+            - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+              value: "[{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/tlscacerts/tls-0-0-0-0-{{$.Values.orgs.tls.ca.port}}.pem]"
+            - name: ORDERER_GENERAL_LISTENPORT
+              value: "{{ $vepoint.extPort }}"
+            - name: ORDERER_OPERATIONS_LISTENADDRESS
+              value: ":8443"
+            - name: ORDERER_METRICS_PROVIDER
+              value: "prometheus"
+          ports:
+            - name: request
+              protocol: TCP
+              containerPort: {{ $vepoint.extPort }}
+            - name: metrics
+              protocol: TCP
+              containerPort: 8443
+          volumeMounts:
+            - mountPath: "{{$.Values.artifacts.docker}}"
+              name: crypto
+---
+{{- end }}

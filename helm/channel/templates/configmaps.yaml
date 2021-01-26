@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: channel-configmap-scripts
+data:
+{{ (.Files.Glob "scripts/*.sh").AsConfig | indent 2 }}
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: channel-configmap-config
+data:
+{{ (.Files.Glob "config/*.yaml").AsConfig | indent 2 }}

@@ -1,0 +1,4 @@
+{{ $vorderer := .Values.orgs.orderer -}}
+{{- range $iepoint, $vepoint := $vorderer.orderers.endpoints }}
+{{ $vepoint.ep }}-{{ $vorderer.name }}:{{ $vepoint.extPort }}
+{{- end }}

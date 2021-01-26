@@ -1,0 +1,104 @@
+{{- range $ipeer, $vpeer := .Values.orgs.peer }}
+{{- range $iepoint, $vepoint := .peers.endpoints }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $vepoint.ep }}-{{ $vpeer.name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    app: {{ $vepoint.ep }}-{{ $vpeer.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      chart: {{$.Chart.Name}}
+      instance: {{$.Release.Name}}
+      app: {{ $vepoint.ep }}-{{ $vpeer.name }}
+  template:
+    metadata:
+      labels:
+        chart: {{$.Chart.Name}}
+        instance: {{$.Release.Name}}
+        app: {{ $vepoint.ep }}-{{ $vpeer.name }}
+    spec:
+      volumes:
+        - name: dockersocket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: {{ $vepoint.ep }}-{{ $vpeer.name }}
+          image: "hyperledger/fabric-peer:{{ $.Values.network.fabricImage }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          env:
+            - name: TZ
+              value: "{{ $.Values.network.timezone }}"
+            - name: CORE_PEER_ADDRESSAUTODETECT
+              value: "true"
+            - name: CORE_VM_DOCKER_ATTACHOUT
+              value: "true"
+            - name: CORE_PEER_NETWORKID
+              value: "nid1"
+            - name: CORE_VM_ENDPOINT
+              value: "unix:///host/var/run/docker.sock"
+            - name: FABRIC_LOGGING_SPEC
+              value: "INFO"
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: CORE_PEER_GOSSIP_USELEADERELECTION
+              value: "true"
+            - name: CORE_PEER_GOSSIP_ORGLEADER
+              value: "false"
+            - name: CORE_PEER_PROFILE_ENABLED
+              value: "true"
+            - name: CORE_PEER_ID
+              value: "{{ $vepoint.ep }}-{{ $vpeer.name }}"
+            - name: CORE_PEER_ADDRESS
+              value: "{{ $vepoint.ep }}-{{ $vpeer.name }}:{{ $vepoint.port }}"
+            - name: CORE_PEER_LISTENADDRESS
+              value: "0.0.0.0:{{ $vepoint.port }}"
+            - name: CORE_PEER_EVENTS_ADDRESS
+              value: "0.0.0.0:{{ $vepoint.eventhubPort }}"
+            - name: CORE_PEER_LOCALMSPID
+              value: "{{ $vpeer.id }}"
+            - name: CORE_PEER_MSPCONFIGPATH
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/msp"
+            - name: CORE_PEER_TLS_CERT_FILE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/signcerts/cert.pem"
+            - name: CORE_PEER_TLS_KEY_FILE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/keystore/key.pem"
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: "{{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{$vepoint.certPath}}/tls-msp/tlscacerts/tls-0-0-0-0-{{$.Values.orgs.tls.ca.port}}.pem"
+            - name: CORE_PEER_GOSSIP_BOOTSTRAP
+              value: "{{if eq $iepoint 0}}{{ (index $vpeer.peers.endpoints 1).ep }}-{{ $vpeer.name }}:{{ (index $vpeer.peers.endpoints 1).port }}{{else}}{{ (index $vpeer.peers.endpoints 0).ep }}-{{ $vpeer.name }}:{{ (index $vpeer.peers.endpoints 0).port }}{{end}}"
+            - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+              value: "{{ $vepoint.ep }}-{{ $vpeer.name }}:{{ $vepoint.port }}"
+            - name: CORE_PEER_CHAINCODELISTENADDRESS
+              value: "0.0.0.0:{{ $vepoint.chaincodePort }}"
+            - name: CORE_OPERATIONS_LISTENADDRESS
+              value: ":9443"
+            - name: CORE_METRICS_PROVIDER
+              value: prometheus
+          ports:
+            - name: request
+              protocol: TCP
+              containerPort: {{ $vepoint.port }}
+            - name: eventhub
+              protocol: TCP
+              containerPort: {{ $vepoint.eventhubPort }}
+            - name: metrics
+              protocol: TCP
+              containerPort: 9443
+          volumeMounts:
+            - mountPath: "/host/var/run/docker.sock"
+              name: dockersocket
+            - mountPath: "{{ $.Values.artifacts.docker }}"
+              name: crypto
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,27 @@
+{{ $vorderer := .Values.orgs.orderer -}}
+{{- range $iepoint, $vepoint := $vorderer.orderers.endpoints }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $vepoint.ep }}-{{ $vorderer.name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    svc: {{ $vepoint.ep }}-{{ $vorderer.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $vepoint.ep }}-{{ $vorderer.name }}
+  ports:
+    - name: address
+      protocol: TCP
+      port: {{ $vepoint.extPort }}
+      targetPort: {{ $vepoint.extPort }}
+    - name: metrics
+      protocol: TCP
+      port: 8443
+      targetPort: 8443
+---
+{{- end }}

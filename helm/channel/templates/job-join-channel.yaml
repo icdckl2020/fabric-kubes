@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: join-channel
+  labels:
+    {{- include "labels" . | nindent 4 }}
+    app: join-channel
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      name: join-channel
+      labels:
+        {{- include "selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: configmap-scripts
+          configMap:
+            name: channel-configmap-scripts
+            defaultMode: 0755
+        - name: configmap-config
+          configMap:
+            name: channel-configmap-config
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: join-channel
+          image: hyperledger/fabric-tools:{{ .Values.network.fabricImage }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /root
+          command:
+            - /bin/sh
+            - -c
+            - |
+              . /setup/join_channel.sh
+              . /setup/update_anchor.sh
+          env:
+            - name: TZ
+              value: "{{ $.Values.network.timezone }}"
+            - name: CORE_PEER_ADDRESSAUTODETECT
+              value: "true"
+            - name: CORE_VM_DOCKER_ATTACHOUT
+              value: "true"
+            - name: CORE_PEER_NETWORKID
+              value: "nid1"
+            - name: CORE_VM_ENDPOINT
+              value: "unix:///host/var/run/docker.sock"
+            - name: FABRIC_LOGGINING_SPEC
+              value: "DEBUG"
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+          volumeMounts:
+            - mountPath: "/setup"
+              name: configmap-scripts
+            - mountPath: "/config"
+              name: configmap-config
+            - mountPath: "{{ $.Values.artifacts.docker }}"
+              name: crypto

@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-genesis
+  labels:
+    {{- include "labels" . | nindent 4 }}
+    app: create-genesis
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      name: create-genesis
+      labels:
+        {{- include "selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: configmap-scripts
+          configMap:
+            name: genesis-configmap-scripts
+            defaultMode: 0755
+        - name: configmap-config
+          configMap:
+            name: genesis-configmap-config
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: create-genesis
+          image: hyperledger/fabric-tools:{{ .Values.network.fabricImage }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /root
+          command:
+            - /bin/sh
+            - -c
+            - |
+              . /setup/create_genesis.sh
+          env:
+            - name: TZ
+              value: "{{ $.Values.network.timezone }}"
+            - name: FABRIC_CFG_PATH
+              value: "/config"
+            - name: FABRIC_LOGGINING_SPEC
+              value: "DEBUG"
+          volumeMounts:
+            - mountPath: "/setup"
+              name: configmap-scripts
+            - mountPath: "/config"
+              name: configmap-config
+            - mountPath: "{{ $.Values.artifacts.docker }}"
+              name: crypto

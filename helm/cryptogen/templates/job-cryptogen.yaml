@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cryptogen
+  labels:
+    {{- include "labels" . | nindent 4 }}
+    app: cryptogen
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      name: cryptogen
+      labels:
+        {{- include "selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: crytogen
+          image: "bitnami/kubectl:1.19.3"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl exec $(kubectl get pod -l app=tls-ca-org0 -o name) -- /bin/bash -c "/setup/enroll_tls.sh"
+              kubectl exec $(kubectl get pod -l app=rca-org0 -o name) -- /bin/bash -c "/setup/enroll_org0.sh"
+              kubectl exec $(kubectl get pod -l app=rca-org1 -o name) -- /bin/bash -c "/setup/enroll_org1.sh"
+              kubectl exec $(kubectl get pod -l app=rca-org2 -o name) -- /bin/bash -c "/setup/enroll_org2.sh"
+              kubectl exec $(kubectl get pod -l app=rca-org3 -o name) -- /bin/bash -c "/setup/enroll_org3.sh"

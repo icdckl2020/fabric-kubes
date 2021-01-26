@@ -1,0 +1,69 @@
+{{- range $idx, $peer := .Values.orgs.peer }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .ca.host }}-{{ .name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    app: {{ .ca.host }}-{{ .name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      chart: {{$.Chart.Name}}
+      instance: {{$.Release.Name}}
+      app: {{ .ca.host }}-{{ .name }}
+  template:
+    metadata:
+      labels:
+        chart: {{$.Chart.Name}}
+        instance: {{$.Release.Name}}
+        app: {{ .ca.host }}-{{ .name }}
+    spec:
+      volumes:
+        - name: configmap-enrollment
+          configMap:
+            name: fabric-ca-configmap-enrollment
+            defaultMode: 0755
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: {{ .ca.host }}-{{ .name }}
+          image: "hyperledger/fabric-ca:{{ $.Values.network.fabricCaImage }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["sh", "-c", "fabric-ca-server start -d -b {{ .ca.admin }}:${ADMINPW} --cfg.affiliations.allowremove --cfg.identities.allowremove --port {{ .ca.port }}"]
+          env:
+            - name: TZ
+              value: "{{ $.Values.network.timezone }}"
+            - name: FABRIC_CA_SERVER_TLS_ENABLED
+              value: "true"
+            - name: FABRIC_CA_SERVER_CSR_HOSTS
+              value: 0.0.0.0
+            - name: FABRIC_CA_SERVER_DEBUG
+              value: "{{ $.Values.debug }}"
+            - name: FABRIC_CA_SERVER_HOME
+              value: {{$.Values.artifacts.docker}}/{{$.Values.artifacts.crypto}}{{if ne $.Values.artifacts.crypto ""}}/{{end}}{{.ca.serverHome}}
+            - name: FABRIC_CA_SERVER_CSR_CN
+              value: "{{.ca.host}}-{{.domain}}"
+            - name: FABRIC_CA_SERVER_CA_NAME
+              value: "{{.ca.host}}-{{.domain}}"
+            - name: ADMINPW
+              valueFrom:
+                secretKeyRef:
+                  name: fabric-ca-secrets
+                  key: org{{$idx}}-ca-adminpw
+          ports:
+            - name: request
+              protocol: TCP
+              containerPort: {{ .ca.port }}
+          volumeMounts:
+            - mountPath: "/setup"
+              name: configmap-enrollment
+            - mountPath: "{{ $.Values.artifacts.docker }}"
+              name: crypto
+---
+{{- end }}

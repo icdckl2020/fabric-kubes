@@ -1,0 +1,32 @@
+{{- range $ipeer, $vpeer := .Values.orgs.peer }}
+{{- range $iepoint, $vepoint := .peers.endpoints }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $vepoint.ep }}-{{ $vpeer.name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    svc: {{ $vepoint.ep }}-{{ $vpeer.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $vepoint.ep }}-{{ $vpeer.name }}
+  ports:
+    - name: address
+      protocol: TCP
+      port: {{ $vepoint.port }}
+      targetPort: {{ $vepoint.port }}
+    - name: eventhub
+      protocol: TCP
+      port: {{ $vepoint.eventhubPort }}
+      targetPort: {{ $vepoint.eventhubPort }}
+    - name: metrics
+      protocol: TCP
+      port: 9443
+      targetPort: 9443
+---
+{{- end }}
+{{- end }}

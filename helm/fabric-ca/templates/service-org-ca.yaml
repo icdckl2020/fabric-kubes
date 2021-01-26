@@ -1,0 +1,23 @@
+{{- range $idx, $peer := .Values.orgs.peer }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .ca.host }}-{{ .name }}
+  labels:
+    chart: {{$.Chart.Name}}
+    instance: {{$.Release.Name}}
+    version: "{{$.Chart.AppVersion}}"
+    managed-by: {{$.Release.Service }}
+    svc: {{ .ca.host }}-{{ .name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .ca.host }}-{{ .name }}
+    instance: {{$.Release.Name}}
+  ports:
+    - name: request
+      protocol: TCP
+      port: {{ .ca.port }}
+      targetPort: {{ .ca.port }}
+---
+{{- end }}

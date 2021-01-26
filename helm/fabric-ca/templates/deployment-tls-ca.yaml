@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}
+  labels:
+    {{- include "labels" . | nindent 4 }}
+    app: {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "selectorLabels" . | nindent 6 }}
+      app: {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabels" . | nindent 8 }}
+        app: {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}
+    spec:
+      volumes:
+        - name: configmap-enrollment
+          configMap:
+            name: fabric-ca-configmap-enrollment
+            defaultMode: 0755
+        - name: crypto
+          persistentVolumeClaim:
+            claimName: pvc-crypto
+      containers:
+        - name: {{ .Values.orgs.tls.ca.host }}-{{ .Values.orgs.tls.name }}
+          image: "hyperledger/fabric-ca:{{ .Values.network.fabricCaImage }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c", "fabric-ca-server start -d -b {{.Values.orgs.tls.ca.admin}}:${ADMINPW} --cfg.affiliations.allowremove --cfg.identities.allowremove --port {{ .Values.orgs.tls.ca.port }}"]
+          env:
+            - name: TZ
+              value: "{{ .Values.network.timezone }}"
+            - name: FABRIC_CA_SERVER_TLS_ENABLED
+              value: "true"
+            - name: FABRIC_CA_SERVER_CSR_HOSTS
+              value: 0.0.0.0
+            - name: FABRIC_CA_SERVER_DEBUG
+              value: "{{ .Values.debug }}"
+            - name: FABRIC_CA_SERVER_HOME
+              value: {{.Values.artifacts.docker}}/{{.Values.artifacts.crypto}}{{if ne .Values.artifacts.crypto ""}}/{{end}}{{.Values.orgs.tls.ca.serverHome}}
+            - name: FABRIC_CA_SERVER_CSR_CN
+              value: "{{.Values.orgs.tls.ca.host}}-{{.Values.orgs.tls.domain}}"
+            - name: FABRIC_CA_SERVER_CA_NAME
+              value: "{{.Values.orgs.tls.ca.host}}-{{.Values.orgs.tls.domain}}"
+            - name: ADMINPW
+              valueFrom:
+                secretKeyRef:
+                  name: fabric-ca-secrets
+                  key: tls-ca-adminpw
+          ports:
+            - name: request
+              protocol: TCP
+              containerPort: {{ .Values.orgs.tls.ca.port }}
+          volumeMounts:
+            - mountPath: "/setup"
+              name: configmap-enrollment
+            - mountPath: "{{ .Values.artifacts.docker }}"
+              name: crypto
